@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.geekband.yanjinyi1987.downloader.MainActivity">
+
+    <TextView
+        android:id="@+id/app_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Downloader"
+        android:textSize="36sp"
+        android:layout_centerHorizontal="true"/>
+
+
+    <EditText
+        android:id="@+id/urls_input"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_below="@+id/app_title"
+        android:inputType="textMultiLine"
+        android:scrollbars="vertical"
+        android:gravity="top"
+        android:background="@drawable/bg_edittext"/>
+
+    <Button
+        android:id="@+id/ok_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start"
+        android:textSize="20sp"
+        android:layout_below="@+id/urls_input"
+        android:layout_alignParentLeft="true"/>
+
+    <Button
+        android:id="@+id/cancle_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cancle"
+        android:textSize="20sp"
+        android:layout_below="@+id/urls_input"
+        android:layout_alignParentRight="true"/>
+
+    <ListView
+        android:id="@+id/downloader_lists"
+        android:paddingTop="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/cancle_button">
+
+    </ListView>
+
+</RelativeLayout>
