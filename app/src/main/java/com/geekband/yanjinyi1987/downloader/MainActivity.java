@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private ListView mProgressBarList;
     private List<MyListItem> downloader_progresses;
     private EditText mUrlsInput;
+    private MyDownloadTask myDownloadTask[];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
         downloader_progresses = new ArrayList<>();
         mCancelButton.setEnabled(false);
 
+
         final MyProgressBarAdapter myProgressBarAdapter = new MyProgressBarAdapter(MainActivity.this,0, downloader_progresses);
         mProgressBarList.setAdapter(myProgressBarAdapter);
         
@@ -51,16 +53,19 @@ public class MainActivity extends AppCompatActivity {
                 String[] urls = getUrlsFromEditText();
                 int urls_count = urls.length;
                 for (int i = 0; i < urls_count; i++) {
-                    downloader_progresses.add(new MyListItem());
+                    downloader_progresses.add(new MyListItem(0));
                 }
-                myProgressBarAdapter.notifyDataSetChanged();
+                //myProgressBarAdapter.notifyDataSetChanged();
 
-                for (int i = 0; i < urls_count; i++) {
-                    downloader_progresses.get(i).mProgressBar.setVisibility(View.INVISIBLE);
-                }
                 mOKButton.setEnabled(false);
                 mUrlsInput.setEnabled(false);
                 mCancelButton.setEnabled(true);
+
+                myDownloadTask = new MyDownloadTask[urls_count];
+                for (int i = 0; i < urls_count; i++) {
+                    myDownloadTask[i].execute(urls[i]);
+                }
+
             }
         });
 
@@ -72,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
                 mCancelButton.setEnabled(false);
                 downloader_progresses.clear();
                 myProgressBarAdapter.notifyDataSetChanged();
+                myDownloadTask.cancel(true);
             }
         });
     }
@@ -82,7 +88,8 @@ public class MainActivity extends AppCompatActivity {
         return text.split("\n");
     }
 
-    private class MyDownloadTask extends AsyncTask<String[],Integer,String[]> {
+    private class MyDownloadTask extends AsyncTask<String,Integer,String> {
+
 
         @Override
         protected void onPreExecute() {
@@ -90,9 +97,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected String[] doInBackground(String[]... strings) {
-            return new String[0];
+        protected String doInBackground(String... params) {
+            return new String();
         }
+
 
         @Override
         protected void onProgressUpdate(Integer... values) {
@@ -100,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(String[] strings) {
+        protected void onPostExecute(String strings) {
             super.onPostExecute(strings);
         }
 
@@ -112,8 +120,13 @@ public class MainActivity extends AppCompatActivity {
 }
 
 class MyListItem {
-    ProgressBar mProgressBar;
-    ImageButton mStopButton;
+//    ProgressBar mProgressBar;
+//    ImageButton mStopButton;
+    public int progress;
+
+    public MyListItem(int progress) {
+        this.progress = progress;
+    }
 }
 class MyProgressBarAdapter extends ArrayAdapter {
     List<MyListItem> mExternalListItems;
@@ -124,6 +137,7 @@ class MyProgressBarAdapter extends ArrayAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+        int progress = ((MyListItem)getItem(position)).progress;
         View view;
         ProgressBar mProgressBar;
         ImageButton mStopButton;
@@ -133,9 +147,11 @@ class MyProgressBarAdapter extends ArrayAdapter {
             mStopButton = (ImageButton) view.findViewById(R.id.stop_image_button);
             ViewHolder viewHolder = new ViewHolder(mProgressBar,mStopButton);
             view.setTag(viewHolder);
+            mProgressBar.setProgress(progress);
         }
         else {
             view = convertView;
+            ((ViewHolder)view.getTag()).mProgressBar.setProgress(progress);
         }
         return view;
     }
@@ -145,8 +161,8 @@ class MyProgressBarAdapter extends ArrayAdapter {
         super.notifyDataSetChanged();
         for (int i = 0; i < getCount(); i++) {
             View view = getView(i,null,null);
-            mExternalListItems.get(i).mProgressBar = ((ViewHolder)view.getTag()).mProgressBar;
-            mExternalListItems.get(i).mStopButton = ((ViewHolder)view.getTag()).mStopButton;
+//            mExternalListItems.get(i).mProgressBar = ((ViewHolder)view.getTag()).mProgressBar;
+//            mExternalListItems.get(i).mStopButton = ((ViewHolder)view.getTag()).mStopButton;
         }
     }
 
