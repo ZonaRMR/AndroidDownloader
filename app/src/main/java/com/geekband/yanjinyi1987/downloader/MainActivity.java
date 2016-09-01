@@ -2,6 +2,7 @@ package com.geekband.yanjinyi1987.downloader;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private List<MyListItem> downloader_progresses;
     private EditText mUrlsInput;
     private MyDownloadTask myDownloadTask[];
+    private MyProgressBarAdapter myProgressBarAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         mCancelButton.setEnabled(false);
 
 
-        final MyProgressBarAdapter myProgressBarAdapter = new MyProgressBarAdapter(MainActivity.this,0, downloader_progresses);
+        myProgressBarAdapter = new MyProgressBarAdapter(MainActivity.this,0, downloader_progresses);
         mProgressBarList.setAdapter(myProgressBarAdapter);
         
         mOKButton.setOnClickListener(new View.OnClickListener() {
@@ -51,11 +53,17 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 downloader_progresses.clear();
                 String[] urls = getUrlsFromEditText();
+                List<String> urls_list = new ArrayList<>();
                 int urls_count = urls.length;
                 for (int i = 0; i < urls_count; i++) {
-                    downloader_progresses.add(new MyListItem(0));
+                    if(!urls[i].equals("")) {
+                        downloader_progresses.add(new MyListItem(0));
+                        urls_list.add(urls[i]);
+                        Log.i("show String", urls[i] + "xxx");
+                    }
                 }
-                //myProgressBarAdapter.notifyDataSetChanged();
+                urls_count = urls_list.size();
+                myProgressBarAdapter.notifyDataSetChanged();
 
                 mOKButton.setEnabled(false);
                 mUrlsInput.setEnabled(false);
@@ -63,7 +71,10 @@ public class MainActivity extends AppCompatActivity {
 
                 myDownloadTask = new MyDownloadTask[urls_count];
                 for (int i = 0; i < urls_count; i++) {
-                    myDownloadTask[i].execute(urls[i]);
+                    myDownloadTask[i]=new MyDownloadTask();
+                    myDownloadTask[i].execute(new InputParameters(urls_list.get(i),
+                            downloader_progresses.get(i),
+                            i));
                 }
 
             }
@@ -77,7 +88,10 @@ public class MainActivity extends AppCompatActivity {
                 mCancelButton.setEnabled(false);
                 downloader_progresses.clear();
                 myProgressBarAdapter.notifyDataSetChanged();
-                myDownloadTask.cancel(true);
+                for (int i = 0; i < downloader_progresses.size(); i++) {
+                    myDownloadTask[i].cancel(true);
+                }
+
             }
         });
     }
@@ -85,19 +99,41 @@ public class MainActivity extends AppCompatActivity {
     private String[] getUrlsFromEditText() {
         ArrayList<String> urls = new ArrayList<>();
         String text = mUrlsInput.getText().toString();
+        Log.i("File", Environment.getDownloadCacheDirectory().getAbsolutePath());
         return text.split("\n");
     }
 
-    private class MyDownloadTask extends AsyncTask<String,Integer,String> {
+    class InputParameters {
+        public String url;
+        public MyListItem myListItem;
+        public int position;
 
+        public InputParameters(String url, MyListItem myListItem,int position) {
+            this.url = url;
+            this.myListItem = myListItem;
+            this.position = position;
+        }
+    }
+
+    private class MyDownloadTask extends AsyncTask<InputParameters,Integer,String> {
+
+
+        public static final String TAG = "MyDownloadTask";
+        InputParameters inputParameters;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
+            Log.i(TAG,"onPreExecute");
+
         }
 
         @Override
-        protected String doInBackground(String... params) {
+        protected String doInBackground(InputParameters... params) {
+
+            inputParameters = params[0];
+            Log.i(TAG,"doInBackground"+inputParameters.position);
+            publishProgress(20);
             return new String();
         }
 
@@ -105,16 +141,22 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
+            Log.i(TAG,"onProgressUpdate");
+            inputParameters.myListItem.progress=15;
+            myProgressBarAdapter.notifyDataSetChanged();
+
         }
 
         @Override
         protected void onPostExecute(String strings) {
             super.onPostExecute(strings);
+            Log.i(TAG,"onPostExecute");
         }
 
         @Override
         protected void onCancelled() {
             super.onCancelled();
+            Log.i(TAG,"onCancelled");
         }
     }
 }
