@@ -53,13 +53,17 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 downloader_progresses.clear();
                 String[] urls = getUrlsFromEditText();
+                String[] urls_test = {"http://mirrors.ustc.edu.cn/eclipse/aether/aether-core/1.0.1/dist/aether-1.0.1-bin.zip",
+                "http://mirrors.ustc.edu.cn/eclipse/aether/aether-core/1.0.1/dist/aether-1.0.1-src.zip",
+                "http://w.xavbt.com/7/uploads/2016/09/1_141113064612.jpg"};
+                urls = urls_test;
                 List<String> urls_list = new ArrayList<>();
                 int urls_count = urls.length;
                 for (int i = 0; i < urls_count; i++) {
                     if(!urls[i].equals("")) {
                         downloader_progresses.add(new MyListItem(0));
                         urls_list.add(urls[i]);
-                        Log.i("show String", urls[i] + "xxx");
+                        Log.i("show String", urls[i]);
                     }
                 }
                 urls_count = urls_list.size();
@@ -72,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
                 myDownloadTask = new MyDownloadTask[urls_count];
                 for (int i = 0; i < urls_count; i++) {
                     myDownloadTask[i]=new MyDownloadTask();
-                    myDownloadTask[i].execute(new InputParameters(urls_list.get(i),
+                    myDownloadTask[i].executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,new InputParameters(urls_list.get(i),
                             downloader_progresses.get(i),
                             i));
                 }
@@ -115,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class MyDownloadTask extends AsyncTask<InputParameters,Integer,String> {
+    public class MyDownloadTask extends AsyncTask<InputParameters,Integer,String> {
 
 
         public static final String TAG = "MyDownloadTask";
@@ -128,15 +132,24 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
+
         @Override
         protected String doInBackground(InputParameters... params) {
 
             inputParameters = params[0];
             Log.i(TAG,"doInBackground"+inputParameters.position);
-            publishProgress(20);
-            return new String();
+            Downloader downloader = new Downloader(MainActivity.this);
+            try {
+                downloader.httpDownloader(params[0].url,this);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
         }
 
+        public void setProgress(int i) {
+            publishProgress(i);
+        }
 
         @Override
         protected void onProgressUpdate(Integer... values) {
