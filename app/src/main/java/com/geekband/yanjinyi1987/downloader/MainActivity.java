@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText mUrlsInput;
     private MyDownloadTask myDownloadTask[];
     private MyProgressBarAdapter myProgressBarAdapter;
+    private int urls_count;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,13 +54,16 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 downloader_progresses.clear();
-                String[] urls = getUrlsFromEditText();
                 String[] urls_test = {"http://mirrors.ustc.edu.cn/eclipse/aether/aether-core/1.0.1/dist/aether-1.0.1-bin.zip",
-                "http://mirrors.ustc.edu.cn/eclipse/aether/aether-core/1.0.1/dist/aether-1.0.1-src.zip",
-                "http://w.xavbt.com/7/uploads/2016/09/1_141113064612.jpg"};
-                urls = urls_test;
+                        "http://mirrors.ustc.edu.cn/eclipse/aether/aether-core/1.0.1/dist/aether-1.0.1-src.zip",
+                        "http://w.xavbt.com/7/uploads/2016/09/1_141113064612.jpg"};
+
+                mUrlsInput.setText(urls_test[0]+"\n"+urls_test[1]+"\n"+urls_test[2]);
+                String[] urls = getUrlsFromEditText();
+
+                //urls = urls_test;
                 List<String> urls_list = new ArrayList<>();
-                int urls_count = urls.length;
+                urls_count = urls.length;
                 for (int i = 0; i < urls_count; i++) {
                     if(!urls[i].equals("")) {
                         downloader_progresses.add(new MyListItem(0));
@@ -119,11 +124,32 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class MyDownloadTask extends AsyncTask<InputParameters,Integer,String> {
+    public static Integer count=0;
+
+    boolean checkFinishedAll() {
+        synchronized (count) {
+            count++;
+            if(count!=urls_count) {
+                return false;
+            }
+            else {
+                count=0;
+                mOKButton.setEnabled(true);
+                mUrlsInput.setEnabled(true);
+                mCancelButton.setEnabled(false);
+                downloader_progresses.clear();
+                myProgressBarAdapter.notifyDataSetChanged();
+                return true;
+            }
+        }
+    }
+
+    public class MyDownloadTask extends AsyncTask<InputParameters,Integer,Boolean> {
 
 
         public static final String TAG = "MyDownloadTask";
         InputParameters inputParameters;
+        private Downloader downloader;
 
         @Override
         protected void onPreExecute() {
@@ -134,17 +160,19 @@ public class MainActivity extends AppCompatActivity {
 
 
         @Override
-        protected String doInBackground(InputParameters... params) {
-
+        protected Boolean doInBackground(InputParameters... params) {
+            boolean result=false;
             inputParameters = params[0];
             Log.i(TAG,"doInBackground"+inputParameters.position);
-            Downloader downloader = new Downloader(MainActivity.this);
+            downloader = new Downloader(MainActivity.this);
             try {
-                downloader.httpDownloader(params[0].url,this);
+                result = downloader.httpDownloader(params[0].url,this);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return null;
+            finally {
+                return result;
+            }
         }
 
         public void setProgress(int i) {
@@ -154,29 +182,30 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-            Log.i(TAG,"onProgressUpdate");
-            inputParameters.myListItem.progress=15;
+            //Log.i(TAG,"onProgressUpdate");
+            inputParameters.myListItem.progress=values[0];
             myProgressBarAdapter.notifyDataSetChanged();
-
         }
 
         @Override
-        protected void onPostExecute(String strings) {
-            super.onPostExecute(strings);
-            Log.i(TAG,"onPostExecute");
+        protected void onPostExecute(Boolean aBoolean) {
+            super.onPostExecute(aBoolean);
+            inputParameters.myListItem.mStopButton.setText("Done");
+            checkFinishedAll();
         }
 
         @Override
         protected void onCancelled() {
             super.onCancelled();
             Log.i(TAG,"onCancelled");
+            downloader.setBreak();
         }
     }
 }
 
 class MyListItem {
-//    ProgressBar mProgressBar;
-//    ImageButton mStopButton;
+    ProgressBar mProgressBar;
+    TextView mStopButton;
     public int progress;
 
     public MyListItem(int progress) {
@@ -195,11 +224,13 @@ class MyProgressBarAdapter extends ArrayAdapter {
         int progress = ((MyListItem)getItem(position)).progress;
         View view;
         ProgressBar mProgressBar;
-        ImageButton mStopButton;
+        TextView mStopButton;
         if(convertView==null) {
             view = LayoutInflater.from(getContext()).inflate(R.layout.list_item, null);
             mProgressBar = (ProgressBar) view.findViewById(R.id.download_progress);
-            mStopButton = (ImageButton) view.findViewById(R.id.stop_image_button);
+            mStopButton = (TextView) view.findViewById(R.id.stop_image_button);
+            ((MyListItem)getItem(position)).mProgressBar = mProgressBar;
+            ((MyListItem)getItem(position)).mStopButton = mStopButton;
             ViewHolder viewHolder = new ViewHolder(mProgressBar,mStopButton);
             view.setTag(viewHolder);
             mProgressBar.setProgress(progress);
@@ -223,9 +254,9 @@ class MyProgressBarAdapter extends ArrayAdapter {
 
     class ViewHolder {
         public ProgressBar mProgressBar;
-        public ImageButton mStopButton;
+        public TextView mStopButton;
 
-        public ViewHolder(ProgressBar mProgressBar, ImageButton mStopButton) {
+        public ViewHolder(ProgressBar mProgressBar, TextView mStopButton) {
             this.mProgressBar = mProgressBar;
             this.mStopButton = mStopButton;
         }

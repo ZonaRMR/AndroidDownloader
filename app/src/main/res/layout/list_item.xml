@@ -15,7 +15,7 @@
         style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:layout_marginRight="1px"/>
 
-    <ImageButton
+    <TextView
         android:id="@+id/stop_image_button"
         android:layout_width="50dp"
         android:layout_height="50dp"
